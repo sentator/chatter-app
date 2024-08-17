@@ -19,11 +19,17 @@ model User {
   last_name String
   email String @unique
   password String
-  refreshToken String?
+  refresh_token String? @unique
 }
 
 model AccessTokenBlackList {
   id Int @id @default(autoincrement())
   token String
   expiry_timestamp DateTime @default(dbgenerated("(NOW() + '15 minutes'::interval)"))
+}
+
+model RefreshTokenBlackList {
+  id Int @id @default(autoincrement())
+  token String
+  expiry_timestamp DateTime @default(dbgenerated("(NOW() + '7 days'::interval)"))
 }

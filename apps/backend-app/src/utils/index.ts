@@ -6,3 +6,7 @@ export const extractTokenFromHeader = (
   const [type, token] = request.headers.authorization?.split(' ') ?? [];
   return type === 'Bearer' ? token : undefined;
 };
+
+export const extractRefreshTokenFromCookies = (req: Request) => {
+  return req.cookies.refreshToken;
+};

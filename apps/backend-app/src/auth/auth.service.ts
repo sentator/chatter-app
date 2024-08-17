@@ -7,7 +7,12 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
-import { SigninBodyDto, SignoutPayload, SignupBodyDto } from './dto/auth.dto';
+import {
+  RefreshPayload,
+  SigninBodyDto,
+  SignoutPayload,
+  SignupBodyDto,
+} from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -64,25 +69,46 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  async signout({ userId, accessToken }: SignoutPayload) {
-    // Workaround with the optional type. We'll always have the accessToken at this point
-    if (!accessToken) {
+  async signout({ userId, accessToken, refreshToken }: SignoutPayload) {
+    // Workaround with the optional type. We'll always have the tokens at this point
+    if (!accessToken || !refreshToken) {
       throw new UnauthorizedException();
     }
 
     await this.prisma.user.update({
       where: { user_id: userId },
-      data: { refreshToken: null },
+      data: { refresh_token: null },
     });
     await this.prisma.accessTokenBlackList.create({
       data: { token: accessToken },
     });
-
-    return { message: 'Logged out successfully' };
+    await this.prisma.refreshTokenBlackList.create({
+      data: { token: refreshToken },
+    });
   }
 
-  async refresh() {
-    return;
+  async refresh({ userId, refreshToken }: RefreshPayload) {
+    const user = await this.prisma.user.findUnique({
+      where: { user_id: userId },
+    });
+
+    // Check if user exists (with such id from the jwt payload)
+    if (!user?.refresh_token) {
+      throw new UnauthorizedException();
+    }
+
+    const isEqualTokens = await bcrypt.compare(
+      refreshToken,
+      user.refresh_token
+    );
+
+    if (!isEqualTokens) {
+      throw new UnauthorizedException();
+    }
+
+    const { accessToken } = this.generateTokens(user.user_id);
+
+    return { accessToken };
   }
 
   generateTokens(userId: number) {
@@ -102,13 +128,20 @@ export class AuthService {
     const hashedRefreshToken = await bcrypt.hash(refreshToken, 5);
     await this.prisma.user.update({
       where: { user_id: userId },
-      data: { refreshToken: hashedRefreshToken },
+      data: { refresh_token: hashedRefreshToken },
     });
   }
 
   async isAccessTokenBlacklisted(accessToken: string) {
     const isBlacklisted = await this.prisma.accessTokenBlackList.findFirst({
       where: { token: accessToken },
+    });
+    return !!isBlacklisted;
+  }
+
+  async isRefreshTokenBlacklisted(refreshToken: string) {
+    const isBlacklisted = await this.prisma.refreshTokenBlackList.findFirst({
+      where: { token: refreshToken },
     });
     return !!isBlacklisted;
   }

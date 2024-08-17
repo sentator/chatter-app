@@ -21,7 +21,11 @@ import { AUTH_COOKIES_MAX_AGE } from '../constants';
 import { AccessTokenGuard } from '../guards/accessToken.guard';
 import { User } from '../decorators/user.decorator';
 import { UserJwtPayload } from '../types';
-import { extractTokenFromHeader } from '../utils';
+import {
+  extractRefreshTokenFromCookies,
+  extractTokenFromHeader,
+} from '../utils';
+import { RefreshTokenGuard } from '../guards/refreshToken.guard';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -50,13 +54,34 @@ export class AuthController {
 
   @Post('signout')
   @UseGuards(AccessTokenGuard)
-  signout(@Req() req: Request, @User() user: UserJwtPayload) {
+  async signout(
+    @Req() req: Request,
+    @User() user: UserJwtPayload,
+    @Res() res: Response
+  ) {
     const accessToken = extractTokenFromHeader(req);
-    return this.authService.signout({ userId: user.userId, accessToken });
+    const refreshToken = extractRefreshTokenFromCookies(req);
+    await this.authService.signout({
+      userId: user.userId,
+      accessToken,
+      refreshToken,
+    });
+    res.clearCookie('refreshToken');
+    res.json({ message: 'Logged out successfully' });
   }
 
   @Get('refresh')
-  refresh() {
-    return;
+  @UseGuards(RefreshTokenGuard)
+  async refresh(
+    @Req() req: Request,
+    @User() user: UserJwtPayload,
+    @Res() res: Response
+  ) {
+    const refreshToken: string = req.cookies.refreshToken;
+    const { accessToken } = await this.authService.refresh({
+      userId: user.userId,
+      refreshToken,
+    });
+    res.json({ accessToken });
   }
 }
