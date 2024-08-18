@@ -38,6 +38,7 @@ export class AuthController {
       maxAge: AUTH_COOKIES_MAX_AGE,
       httpOnly: true,
     });
+
     res.json({ accessToken });
   }
 

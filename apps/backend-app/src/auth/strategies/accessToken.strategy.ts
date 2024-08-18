@@ -4,6 +4,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Request } from 'express';
 import { AuthService } from '../auth.service';
 import { extractTokenFromHeader } from '../../utils';
+import { UserService } from '../../users/users.service';
 
 type JwtPayload = {
   sub: number;
@@ -11,7 +12,10 @@ type JwtPayload = {
 
 @Injectable()
 export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
-  constructor(private authService: AuthService) {
+  constructor(
+    private authService: AuthService,
+    private userService: UserService
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: process.env.JWT_ACCESS_SECRET,
@@ -28,8 +32,9 @@ export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
 
     const isAccessTokenBlacklisted =
       await this.authService.isAccessTokenBlacklisted(accessToken);
+    const userExists = await this.userService.findOneById(payload.sub);
 
-    if (isAccessTokenBlacklisted) {
+    if (isAccessTokenBlacklisted || !userExists) {
       throw new UnauthorizedException();
     }
 

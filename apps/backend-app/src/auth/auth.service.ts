@@ -13,31 +13,23 @@ import {
   SignoutPayload,
   SignupBodyDto,
 } from './dto/auth.dto';
+import { UserService } from '../users/users.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService, private jwt: JwtService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwt: JwtService,
+    private userService: UserService
+  ) {}
   async signup(dto: SignupBodyDto) {
-    const { email, password } = dto;
-
-    const foundUser = await this.prisma.user.findUnique({
-      where: {
-        email,
-      },
-    });
+    const foundUser = await this.userService.findOneByEmail(dto.email);
 
     if (foundUser) {
       throw new BadRequestException('User with this email already exists');
     }
 
-    const hashedPassword = await bcrypt.hash(password, 5);
-    const user = await this.prisma.user.create({
-      data: {
-        ...dto,
-        password: hashedPassword,
-      },
-    });
-
+    const user = await this.userService.create(dto);
     const { accessToken, refreshToken } = this.generateTokens(user.user_id);
     await this.saveRefreshToken(user.user_id, refreshToken);
 
