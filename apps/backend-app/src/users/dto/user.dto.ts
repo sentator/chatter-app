@@ -29,7 +29,23 @@ export const userResponseDtoSchema = z.object({
   last_name: z.string(),
 });
 
+export const userListQueryParamsSchema = z.object({
+  search: z
+    .string()
+    .min(3, 'Too short search string. Write 3 characters at least')
+    .optional(),
+  itemsPerPage: z.preprocess(
+    (val?: string) => parseInt(val ?? '', 10),
+    z.number().min(1).max(100)
+  ),
+  page: z.preprocess(
+    (val?: string) => parseInt(val ?? '', 10),
+    z.number().min(1)
+  ),
+});
+
 export type CreateUserDto = z.infer<typeof createUserDtoSchema>;
 export type UpdateUserDto = z.infer<typeof updateUserDtoSchema>;
 export type UserEntity = z.infer<typeof userEntitySchema>;
 export type UserResponseDto = z.infer<typeof userResponseDtoSchema>;
+export type UserListQueryParams = z.infer<typeof userListQueryParamsSchema>;

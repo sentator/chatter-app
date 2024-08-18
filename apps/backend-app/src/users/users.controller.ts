@@ -10,10 +10,16 @@ import {
   UnauthorizedException,
   BadRequestException,
   Res,
+  Query,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { UserService } from './users.service';
-import { UpdateUserDto, updateUserDtoSchema } from './dto/user.dto';
+import {
+  UpdateUserDto,
+  updateUserDtoSchema,
+  UserListQueryParams,
+  userListQueryParamsSchema,
+} from './dto/user.dto';
 import { AccessTokenGuard } from '../guards/accessToken.guard';
 import { ZodValidationPipe } from '../pipes/zodValidationPipe';
 import { User } from '../decorators/user.decorator';
@@ -25,8 +31,11 @@ export class UserController {
   constructor(private readonly usersService: UserService) {}
 
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(
+    @Query(new ZodValidationPipe(userListQueryParamsSchema))
+    query: UserListQueryParams
+  ) {
+    return this.usersService.findAll(query);
   }
 
   @Get(':id')

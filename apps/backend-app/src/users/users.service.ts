@@ -1,6 +1,11 @@
 import bcrypt from 'bcrypt';
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  UserEntity,
+  UserListQueryParams,
+} from './dto/user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { createResponseDtoFromUserEntity } from './utils/user.utils';
 
@@ -21,14 +26,33 @@ export class UserService {
     return createResponseDtoFromUserEntity(user);
   }
 
-  async findAll() {
-    // TODO: implement pagination & search
-    const users = await this.prisma.user.findMany({
-      skip: 0,
-      take: 10,
-    });
+  async findAll(query: UserListQueryParams) {
+    const { search, itemsPerPage, page } = query;
+    const offset = (page - 1) * itemsPerPage;
 
-    return users;
+    const queryWithSearch = async (search: string) => {
+      return await this.prisma.$queryRaw<
+        UserEntity[]
+      >`SELECT * FROM public."User" U
+       WHERE (concat(concat(U."first_name", ' '), U."last_name") ilike ${`%${search}%`})
+       ORDER BY U."user_id"
+       OFFSET ${offset}
+       LIMIT ${itemsPerPage};`;
+    };
+    const queryWithoutSearch = async () => {
+      return await this.prisma.$queryRaw<
+        UserEntity[]
+      >`SELECT * FROM public."User" U
+       ORDER BY U."user_id"
+       OFFSET ${offset}
+       LIMIT ${itemsPerPage};`;
+    };
+
+    const users = search
+      ? await queryWithSearch(search)
+      : await queryWithoutSearch();
+
+    return users.map(createResponseDtoFromUserEntity);
   }
 
   async findOneById(id: number) {
