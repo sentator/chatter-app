@@ -3,7 +3,13 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "migration:generate": "npx prisma migrate dev --name %NAME% --schema apps/backend-app/src/prisma/schema.prisma"
+    "migration:generate": "npx prisma migrate dev --create-only --schema apps/backend-app/src/prisma/schema.prisma",
+    "migration:run": "npx prisma migrate dev --schema apps/backend-app/src/prisma/schema.prisma",
+    "migration:deploy": "npx prisma migrate deploy --schema apps/backend-app/src/prisma/schema.prisma",
+    "seed": "npx prisma db seed"
+  },
+  "prisma": {
+    "seed": "ts-node  --compiler-options {\"module\":\"CommonJS\"} apps/backend-app/src/prisma/seeds/index.ts"
   },
   "private": true,
   "dependencies": {

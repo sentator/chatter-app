@@ -1,5 +1,3 @@
-import bcrypt from 'bcrypt';
-
 import {
   BadRequestException,
   Injectable,
@@ -14,6 +12,7 @@ import {
   SignupBodyDto,
 } from './dto/auth.dto';
 import { UserService } from '../users/users.service';
+import { compareValueWithHash, getHashedValue } from '../utils';
 
 @Injectable()
 export class AuthService {
@@ -49,7 +48,10 @@ export class AuthService {
       throw new BadRequestException('Invalid credentials');
     }
 
-    const isPasswordsEqual = await bcrypt.compare(password, user.password);
+    const isPasswordsEqual = await compareValueWithHash(
+      password,
+      user.password
+    );
 
     if (!isPasswordsEqual) {
       throw new BadRequestException('Invalid credentials');
@@ -89,7 +91,7 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    const isEqualTokens = await bcrypt.compare(
+    const isEqualTokens = await compareValueWithHash(
       refreshToken,
       user.refresh_token
     );
@@ -117,7 +119,7 @@ export class AuthService {
   }
 
   async saveRefreshToken(userId: number, refreshToken: string) {
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, 5);
+    const hashedRefreshToken = await getHashedValue(refreshToken);
     await this.prisma.user.update({
       where: { user_id: userId },
       data: { refresh_token: hashedRefreshToken },
