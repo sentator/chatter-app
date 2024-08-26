@@ -6,7 +6,8 @@
     "migration:generate": "npx prisma migrate dev --create-only --schema apps/backend-app/src/prisma/schema.prisma",
     "migration:run": "npx prisma migrate dev --schema apps/backend-app/src/prisma/schema.prisma",
     "migration:deploy": "npx prisma migrate deploy --schema apps/backend-app/src/prisma/schema.prisma",
-    "seed": "npx prisma db seed"
+    "seed": "npx prisma db seed",
+    "prisma:format": "npx prisma format --schema apps/backend-app/src/prisma/schema.prisma"
   },
   "prisma": {
     "seed": "ts-node  --compiler-options {\"module\":\"CommonJS\"} apps/backend-app/src/prisma/seeds/index.ts"

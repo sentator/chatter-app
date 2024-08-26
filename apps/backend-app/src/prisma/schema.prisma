@@ -14,22 +14,35 @@ datasource db {
 }
 
 model User {
-  user_id Int @id @default(autoincrement())
-  first_name String
-  last_name String
-  email String @unique
-  password String
-  refresh_token String? @unique
+  user_id           Int       @id @default(autoincrement())
+  first_name        String
+  last_name         String
+  email             String    @unique
+  password          String
+  refresh_token     String?   @unique
+  sent_messages     Message[] @relation("SenderRelation")
+  received_messages Message[] @relation("RecipientRelation")
 }
 
 model AccessTokenBlackList {
-  id Int @id @default(autoincrement())
-  token String
+  id               Int      @id @default(autoincrement())
+  token            String
   expiry_timestamp DateTime @default(dbgenerated("(NOW() + '15 minutes'::interval)"))
 }
 
 model RefreshTokenBlackList {
-  id Int @id @default(autoincrement())
-  token String
+  id               Int      @id @default(autoincrement())
+  token            String
   expiry_timestamp DateTime @default(dbgenerated("(NOW() + '7 days'::interval)"))
+}
+
+model Message {
+  id           Int      @id @default(autoincrement())
+  value        String
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  sender       User     @relation("SenderRelation", fields: [sender_id], references: [user_id])
+  sender_id    Int
+  recipient    User     @relation("RecipientRelation", fields: [recipient_id], references: [user_id])
+  recipient_id Int
 }
