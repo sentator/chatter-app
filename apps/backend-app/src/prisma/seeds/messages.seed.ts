@@ -1,7 +1,11 @@
 import { PrismaClient } from '@prisma/client';
 import { createPairOfUsers } from '../../users/utils/user.utils';
+import { Logger } from '@nestjs/common';
 
 export async function seedMessages(prisma: PrismaClient) {
+  const logger = new Logger();
+  logger.log('Started seeding messages...');
+
   const [userId1, userId2] = await createPairOfUsers(prisma);
 
   await prisma.message.create({
@@ -33,4 +37,6 @@ export async function seedMessages(prisma: PrismaClient) {
   await prisma.message.create({
     data: { sender_id: userId1, recipient_id: userId2, value: 'ok, see ya' },
   });
+
+  logger.log('Seeding of messages successfully completed!');
 }

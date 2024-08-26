@@ -1,7 +1,11 @@
 import { PrismaClient } from '@prisma/client';
 import { getHashedValue } from '../../utils';
+import { Logger } from '@nestjs/common';
 
 export async function seedUsers(prisma: PrismaClient) {
+  const logger = new Logger();
+  logger.log('Started seeding users...');
+
   const password1 = await getHashedValue('12345678');
   await prisma.user.upsert({
     where: { email: 'test.user.1@chatter.app' },
@@ -49,4 +53,6 @@ export async function seedUsers(prisma: PrismaClient) {
       password: password3,
     },
   });
+
+  logger.log('Seeding of users successfully completed!');
 }
